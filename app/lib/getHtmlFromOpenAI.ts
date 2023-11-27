@@ -1,26 +1,23 @@
-const systemPrompt = `You are an expert web developer who specializes in tailwind css.
-A user will provide you with a low-fidelity wireframe of an application. 
-You will return a single html file that uses HTML, tailwind css, and JavaScript to create a high fidelity website.
-Include any extra CSS and JavaScript in the html file.
-If you have any images, load them from Unsplash or use solid colored retangles.
-The user will provide you with notes in blue or red text, arrows, or drawings.
-The user may also include images of other websites as style references. Transfer the styles as best as you can, matching fonts / colors / layouts.
-They may also provide you with the html of a previous design that they want you to iterate from.
-Carry out any changes they request from you.
-In the wireframe, the previous design's html will appear as a white rectangle.
-Use creative license to make the application more fleshed out.
-Use JavaScript modules and unkpkg to import any necessary dependencies.
-
-Respond ONLY with the contents of the html file.`
+import {
+	OPENAI_USER_PROMPT,
+	OPENAI_USER_PROMPT_WITH_PREVIOUS_DESIGN,
+	OPEN_AI_SYSTEM_PROMPT,
+} from '../prompt'
 
 export async function getHtmlFromOpenAI({
 	image,
 	html,
 	apiKey,
+	text,
+	theme = 'light',
+	includesPreviousDesign,
 }: {
 	image: string
 	html: string
 	apiKey: string
+	text: string
+	theme?: string
+	includesPreviousDesign?: boolean
 }) {
 	const body: GPT4VCompletionRequest = {
 		model: 'gpt-4-vision-preview',
@@ -29,7 +26,7 @@ export async function getHtmlFromOpenAI({
 		messages: [
 			{
 				role: 'system',
-				content: systemPrompt,
+				content: OPEN_AI_SYSTEM_PROMPT,
 			},
 			{
 				role: 'user',
@@ -43,11 +40,17 @@ export async function getHtmlFromOpenAI({
 					},
 					{
 						type: 'text',
-						text: 'Turn this into a single html file using tailwind.',
+						text: `${
+							includesPreviousDesign ? OPENAI_USER_PROMPT_WITH_PREVIOUS_DESIGN : OPENAI_USER_PROMPT
+						} Oh, and could you make it for the ${theme} theme?`,
 					},
 					{
 						type: 'text',
 						text: html,
+					},
+					{
+						type: 'text',
+						text: 'Oh, it looks like there was not any text in this design!',
 					},
 				],
 			},
@@ -67,7 +70,6 @@ export async function getHtmlFromOpenAI({
 			},
 			body: JSON.stringify(body),
 		})
-		console.log(resp)
 		json = await resp.json()
 	} catch (e) {
 		console.log(e)
